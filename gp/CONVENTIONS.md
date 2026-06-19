@@ -1,0 +1,7 @@
+- Prefer correctness over speed.
+- Keep implementations focused and auditable; avoid unnecessary abstractions.
+- Avoid introducing frameworks.
+- Avoid refactoring unrelated code.
+- Use deterministic seeds.
+- Explain mathematical assumptions in comments.
+- Save each trial under `gp/results/trial_NNN/`.
