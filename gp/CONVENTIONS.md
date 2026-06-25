@@ -14,6 +14,12 @@
 - Apply any redistancing/reinitialization symmetrically to prediction and ground truth, or to neither.
 - Report t = 0 reconstruction error separately from t > 0 forecast error; include a circularity/leakage self-check before reporting.
 
+## Units (see `gp/UNITS.md`)
+
+- **Δt = 1 step = 1 minute** (not seconds): R is in ft/min from Rothermel's imperial formula, and the Euler step has no explicit Δt.
+- `delta_x = 82.021 ft = 25 m`; grid 200×200 = 5 km × 5 km (paper Section 3).
+- `R_f` in ft/min; wind in ft/min; `level_set_field` φ in **grid-index units**, not feet.
+
 ## Reporting
 
 - Save each trial under `gp/results/trial_NNN/`.
