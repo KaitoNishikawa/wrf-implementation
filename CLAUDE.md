@@ -112,7 +112,7 @@ The simulator implementation is the source of truth for:
 
 Use a fixed random seed (document the value used).
 
-Sample 50 observations from t = 0 for all experiments.
+Sample 50 observations from t = 0 for all experiments. Draw them from a **fixed central 100$\times$100 window** of the grid (indices $50 \le x, y < 150$), not the full domain. This window is ground-truth-blind — it is the center of the domain, not chosen from the (unknown) front location; it concentrates the sparse sample where the dynamics live so the front is inferable under a general prior, while keeping the inference genuinely sparse (50 of 10{,}000 cells).
 
 Generate comparisons at t = 50, 100, 150, 200, 250, 300.
 

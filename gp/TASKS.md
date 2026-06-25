@@ -13,6 +13,7 @@ The hard rules these steps enforce live in CLAUDE.md (**Numerical GP requirement
 ## Phase 2
 
 - [ ] Create numerical GP (embed the Euler step in the GP; propagate covariance, not just the mean)
+- [ ] Sample 50 fixed observations from t=0 within the central 100×100 window (indices 50 ≤ x,y < 150); document the seed
 - [ ] Train on sparse observations using only the 50 observation values — no ground-truth field, parameters, or analytic form
 - [ ] Verify the GP is load-bearing: non-zero residual/posterior variance; an ablation shows the result changes when the GP is removed
 - [ ] Confirm predictions are produced by the GP stepper, not by re-running the ground-truth simulator
