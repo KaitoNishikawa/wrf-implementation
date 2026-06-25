@@ -1,0 +1,135 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath,amssymb,bm,booktabs,graphicx,hyperref}
+
+\title{Trial NNN: Short Descriptive Title}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+% Copy this file to gp/results/trial_NNN/report.tex and fill in each section.
+% Compile with: pdflatex report.tex
+
+\section{Governing Physics}
+
+% Level-set evolution equation aligned with simulation.ipynb.
+\begin{equation}
+  \label{eq:levelset}
+  % \phi_t + R_f(\phi)\,|\nabla\phi| - \nu\,\Delta\phi = 0
+\end{equation}
+
+% Rothermel rate-of-spread terms embedded in the RHS.
+
+\begin{table}[h]
+  \centering
+  \caption{Constants and parameters (from \texttt{simulation.ipynb}).}
+  \begin{tabular}{@{}lll@{}}
+    \toprule
+    Symbol & Value & Description \\
+    \midrule
+    % $\Delta x$ & & grid spacing \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\section{Method}
+
+\subsection{Prior placement}
+
+% Where the GP prior sits and why.
+\begin{equation}
+  \label{eq:prior}
+  % \phi^{n-1}(\mathbf{x}) \sim \mathcal{GP}\bigl(\mu(\mathbf{x}),\, k(\mathbf{x},\mathbf{x}';\theta)\bigr)
+\end{equation}
+
+\subsection{Euler discretization and numerical GP construction}
+
+% Forward Euler update.
+\begin{equation}
+  \label{eq:euler}
+  % \phi^n = \phi^{n-1} + \Delta t\,\mathcal{L}_x \phi^{n-1}
+\end{equation}
+
+% Joint multi-output GP structure (block matrix notation).
+\begin{equation}
+  \label{eq:joint-gp}
+  \begin{bmatrix} \phi^n \\ \phi^{n-1} \end{bmatrix}
+  \sim \mathcal{GP}\left(
+    0,\,
+    \begin{bmatrix}
+      k^{n,n} & k^{n,n-1} \\
+      k^{n-1,n} & k^{n-1,n-1}
+    \end{bmatrix}
+  \right)
+\end{equation}
+
+% Kernel expressions derived from the time-stepper.
+% If only the posterior mean is propagated, state the equations and what covariance terms are dropped.
+
+\subsection{Inference from sparse observations}
+
+% Observation model, 50-point sampling setup (seed, locations).
+\begin{equation}
+  \label{eq:posterior}
+  % \mu_* = \mu + K_{*X}(K_{XX} + \sigma_n^2 I)^{-1}(y - \mu_X)
+\end{equation}
+
+% Kernel choice, hyperparameters, and fitting procedure.
+
+\subsection{Algorithm}
+
+\begin{enumerate}
+  \item Sample sparse observations at $t=0$.
+  \item Infer latent initial field via GP conditioning.
+  \item Advance with Euler numerical GP update to each evaluation time.
+  \item Compare prediction to \texttt{simulation.ipynb} ground truth.
+\end{enumerate}
+
+\section{Assumptions and approximations}
+
+\begin{itemize}
+  \item % e.g.\ mean-only propagation; ignored boundaries; nonlinear term evaluated at posterior mean
+\end{itemize}
+
+\section{Experimental setup}
+
+% Seed, grid size, $\Delta t$, $\Delta x$, evaluation times, code paths.
+
+\section{Results}
+
+\begin{table}[h]
+  \centering
+  \caption{Metrics across evaluation times.}
+  \begin{tabular}{@{}rcccc@{}}
+    \toprule
+    Time & Field RMSE & Field MAE & Front distance & Notes \\
+    \midrule
+    % 50 & & & & \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% Reference figure filenames, e.g.:
+% \begin{figure}[h]
+%   \centering
+%   \includegraphics[width=0.9\linewidth]{comparison_t100.png}
+%   \caption{Predicted vs.\ ground truth at $t=100$.}
+% \end{figure}
+
+\section{Sources}
+
+\begin{itemize}
+  \item Raissi et al., \emph{Numerical Gaussian Processes for Time-dependent and Non-linear PDEs}.
+  \item Rothermel (1972); WRF level-set fire-spread paper (\texttt{gp/docs/}).
+  \item \texttt{simulation.ipynb} (implementation reference).
+\end{itemize}
+
+\section{Notes (optional)}
+
+\begin{itemize}
+  \item % what worked, what failed, ideas for next trial
+\end{itemize}
+
+\end{document}

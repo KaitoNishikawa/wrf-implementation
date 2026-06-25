@@ -20,8 +20,6 @@ Read paper notes from `gp/docs/` only. Contains:
 2. An Accurate Fire-Spread Algorithm in the WRF Model Using the Level-Set Method
 3. A Mathematical Model for Predicting Fire (Rothermel Model)
 
-These documents were OCR-converted from PDF and may contain inaccuracies. When in doubt, trust `simulation.ipynb`.
-
 ## Modeling Philosophy
 
 Keep implementations structurally simple: minimize unnecessary abstractions and failure points.
@@ -42,9 +40,46 @@ Avoid:
 
 You have freedom to choose how to embed Rothermel physics into the Numerical GP framework.
 
-Each trial may use a different encoding strategy. Document the chosen approach in `gp/results/trial_NNN/README.md` before presenting results.
+Each trial may use a different encoding strategy. Before presenting results, write a detailed trial report at `gp/results/trial_NNN/report.tex` following the **Trial Documentation** section below. Start from [`gp/report_template.tex`](gp/report_template.tex).
 
 Fidelity to `simulation.ipynb` matters more than following a fixed recipe.
+
+## Trial Documentation
+
+Every trial must include a detailed write-up at `gp/results/trial_NNN/report.tex`. Compile to `gp/results/trial_NNN/report.pdf` with `pdflatex report.tex`. This is for your own review — not a publishable paper. Skip abstract, introduction, and background context you already know.
+
+Write it in the **mathematical style** of *Numerical Gaussian Processes for Time-dependent and Non-linear Partial Differential Equations* (`gp/docs/`): numbered equations, operator notation, block matrix / multi-output GP structure, and tables — not prose-heavy exposition.
+
+### Style requirements
+
+- Use LaTeX as the source format; copy and adapt `gp/report_template.tex` for each trial.
+- Lead with equations and definitions; keep prose short and functional.
+- Number equations with `\begin{equation}...\end{equation}` and `\label{eq:...}`; reference with `\eqref{eq:...}`.
+- Define every symbol when first introduced.
+- Show the key mathematical objects explicitly, including where applicable:
+  - the level-set / PDE operator (e.g. `\mathcal{L}_x`)
+  - the Euler update
+  - GP priors (e.g. `\phi^{n-1}(\mathbf{x}) \sim \mathcal{GP}(\ldots)`)
+  - joint multi-output GP structure as block matrices using `\begin{bmatrix}...\end{bmatrix}`
+  - kernel expressions derived from the time-stepper
+  - conditioning / inference equations for sparse observations
+- Use `booktabs` tables for constants (from `simulation.ipynb`), hyperparameters, and metrics.
+- Include figures with `\includegraphics` pointing to PNGs in the same trial directory.
+- Cite sources in the Sources section: Numerical GP paper, Rothermel/WRF papers, `simulation.ipynb`.
+- Flag approximations and assumptions explicitly (e.g. mean-only propagation, ignored boundaries, nonlinear term treatment).
+- Keep **Method** (what was built), **Results** (what happened), and **Assumptions** (what was simplified) as separate sections.
+
+### Required structure for `report.tex`
+
+Use these `\section{}` headings (see `gp/report_template.tex`):
+
+- **Governing Physics** — level-set evolution and Rothermel RHS (numbered equations), constants table
+- **Method** — subsections: Prior placement; Euler discretization and numerical GP construction; Inference from sparse observations; Algorithm
+- **Assumptions and approximations** — itemized list of every simplification
+- **Experimental setup** — seed, grid size, $\Delta t$, $\Delta x$, evaluation times, code paths
+- **Results** — metrics table, `\includegraphics` references to trial figures
+- **Sources** — citations to papers and `simulation.ipynb`
+- **Notes (optional)** — brief bullets on what worked, what failed, next-trial ideas
 
 ## Physics
 
@@ -76,7 +111,7 @@ For each evaluation:
 After every trial:
 
 1. Save results to `gp/results/trial_NNN/`.
-2. Document the approach in `gp/results/trial_NNN/README.md`.
+2. Write the trial report in `gp/results/trial_NNN/report.tex` and compile `report.pdf` (see **Trial Documentation**; template at `gp/report_template.tex`).
 3. Calculate comparison metrics.
 4. Present plots.
 5. Summarize observations.

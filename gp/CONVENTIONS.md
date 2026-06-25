@@ -5,3 +5,8 @@
 - Use deterministic seeds.
 - Explain mathematical assumptions in comments.
 - Save each trial under `gp/results/trial_NNN/`.
+- Write `gp/results/trial_NNN/report.tex` as a math-forward technical note (see AGENTS.md **Trial Documentation**); copy from `gp/report_template.tex`.
+- Compile `report.pdf` with `pdflatex report.tex` in the trial directory.
+- Use `\begin{equation}` for numbered equations and `\begin{bmatrix}` for block matrices.
+- Define all symbols; cite sources; flag assumptions in a dedicated section.
+- Keep Method, Assumptions, and Results as separate sections.

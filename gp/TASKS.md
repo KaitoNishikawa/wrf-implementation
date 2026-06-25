@@ -26,6 +26,17 @@ Optional checklist — not a mandatory phase gate. You may skip or reorder steps
 - [ ] Show t=0 initial field with sampled observation points overlaid
 - [ ] Calculate comparison metrics
 - [ ] Generate comparison figures
-- [ ] Document approach in gp/results/trial_NNN/README.md
+- [ ] Write trial report in `gp/results/trial_NNN/report.tex` (from `gp/report_template.tex`)
+- [ ] Compile `gp/results/trial_NNN/report.pdf` with `pdflatex`
 - [ ] Summarize findings
 - [ ] Request user feedback
+
+## Trial report checklist (`report.tex`)
+
+- [ ] Governing Physics (numbered equations, constants table)
+- [ ] Method (prior placement, Euler embedding, block matrix / kernel structure, inference, algorithm)
+- [ ] Assumptions and approximations (flagged explicitly)
+- [ ] Experimental setup
+- [ ] Results (metrics table, `\includegraphics` for figures)
+- [ ] Sources cited
+- [ ] `report.pdf` compiles without errors
