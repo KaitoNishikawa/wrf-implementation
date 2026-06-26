@@ -1,0 +1,11 @@
+(a) Predictions come from the GP stepper, not the simulator:
+    ground-truth stepper = simulator_groundtruth.ground_truth_step
+    predictor stepper    = numerical_gp.embedded_levelset_step
+    distinct functions   = True
+(b) Inference used only the 50 observation values; the GP never reads phi0_true.
+    obs value range = [-3.000, 47.508]
+(c) GP is non-degenerate:
+    t=0 ensemble std in front band   = 0.1833 (cells of phi)
+    t=300 ensemble std in front band = 0.2557
+    t=0 reconstruction window RMSE   = 4.2051 (> 0: front genuinely inferred, not leaked)
+    spurious burned cells outside window = 0
