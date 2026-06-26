@@ -65,8 +65,27 @@
   \right)
 \end{equation}
 
-% Kernel expressions derived from the time-stepper.
-% If only the posterior mean is propagated, state the equations and what covariance terms are dropped.
+% MANDATORY: show the construction explicitly (no abstract J K J^T only).
+% This is a write-up standard; it does NOT prescribe an encoding -- that is your
+% choice. Whatever you choose:
+%  - Write your spatial operator(s) out with all coefficients shown (not just
+%    named). If your scheme approximates a nonlinear operator to keep the process
+%    tractable, state and justify YOUR chosen approximation here, then write the
+%    resulting operator(s) out. (Do not assume any particular treatment.)
+\begin{equation}
+  \label{eq:linop}
+  % \mathcal{L}_x \phi = \ldots   % your operator, coefficients written out
+\end{equation}
+%  - Write the discrete stepping operator(s) and the resulting covariance / kernel
+%    objects explicitly for YOUR construction.
+\begin{equation}
+  \label{eq:blockkernels}
+  % the covariance / kernel objects your scheme produces
+\end{equation}
+% Put the full term-by-term expansion + closed-form kernel-derived quantities in
+% the Appendix. If covariance is realized by a computation that differs from the
+% written construction, state the
+% correspondence and the order of agreement.
 
 \subsection{Inference from sparse observations}
 
@@ -125,6 +144,19 @@
   \item Rothermel (1972); WRF level-set fire-spread paper (\texttt{gp/docs/}).
   \item \texttt{simulation.ipynb} (implementation reference).
 \end{itemize}
+
+\appendix
+\section{Explicit construction}
+
+% MANDATORY (§5-appendix style of the Numerical GP paper). Give, for YOUR scheme:
+% - the full term-by-term expansion of the covariance / kernel objects your
+%   construction produces (every cross term written out);
+% - closed-form expressions for any kernel-derived quantities (e.g. for an RBF base
+%   kernel, the relevant Gaussian derivative factors). Verify them (e.g. numerically).
+\begin{equation}
+  \label{eq:appendix-knn}
+  % explicit expansion of your covariance / kernel objects
+\end{equation}
 
 \section{Notes (optional)}
 

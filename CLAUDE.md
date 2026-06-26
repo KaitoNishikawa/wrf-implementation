@@ -80,6 +80,26 @@ Write it in the **mathematical style** of *Numerical Gaussian Processes for Time
   - joint multi-output GP structure as block matrices using `\begin{bmatrix}...\end{bmatrix}`
   - kernel expressions derived from the time-stepper
   - conditioning / inference equations for sparse observations
+- **Explicit construction is mandatory (no abstract-operator hand-waving).** This
+  is a requirement on the *write-up*, not on the method — it does not prescribe how
+  to embed the physics. It is not enough to write the propagated covariance
+  abstractly (e.g. `K_n = J K_{n-1} J^\top` or "apply the operator to the kernel").
+  Whatever encoding **you** choose, show **how your embedded physics produces the
+  covariance, term by term**, in the fully explicit style of §5 (Appendix) of the
+  Numerical GP paper (whose appendix does this for several different schemes).
+  Concretely:
+  - Write your spatial/PDE operator(s) out with **all coefficients shown, not just
+    named**. If your scheme approximates a nonlinear operator to keep the process
+    tractable, state and justify the approximation you chose — this is your call,
+    do not assume any particular one — then write the resulting operator(s) out.
+  - Write the discrete time-stepping operator(s) and the resulting covariance /
+    kernel objects explicitly **for your construction**.
+  - Give the **full term-by-term expansion** of those objects and **closed-form
+    expressions for any kernel-derived quantities** (e.g. for an RBF base kernel,
+    the relevant derivative factors), as the paper does in its Eqs. (45)–(48), in a
+    dedicated **Appendix**. Verify any closed forms (e.g. numerically).
+  The standard is explicitness and thoroughness; the encoding itself is each
+  trial's own choice (see **Approach** — trials stay independent).
 - Use `booktabs` tables for constants (from `simulation.ipynb`), hyperparameters, and metrics.
 - Include figures with `\includegraphics` pointing to PNGs in the same trial directory.
 - Cite sources in the Sources section: Numerical GP paper, Rothermel/WRF papers, `simulation.ipynb`.
@@ -91,11 +111,17 @@ Write it in the **mathematical style** of *Numerical Gaussian Processes for Time
 Use these `\section{}` headings (see `gp/report_template.tex`):
 
 - **Governing Physics** — level-set evolution and Rothermel RHS (numbered equations), constants table
-- **Method** — subsections: Prior placement; Euler discretization and numerical GP construction; Inference from sparse observations; Algorithm
+- **Method** — subsections: Prior placement; Euler discretization and numerical GP construction; Inference from sparse observations; Algorithm. The "Euler discretization and numerical GP construction" subsection must write your spatial operator(s) and the resulting covariance / kernel objects out explicitly (all coefficients shown, not just named), per your chosen encoding.
 - **Assumptions and approximations** — itemized list of every simplification
 - **Experimental setup** — seed, grid size, $\Delta t$, $\Delta x$, evaluation times, code paths
 - **Results** — metrics table, `\includegraphics` references to trial figures
 - **Sources** — citations to papers and `simulation.ipynb`
+- **Appendix: explicit construction** (mandatory) — the full term-by-term
+  expansion of your covariance / kernel objects and closed-form expressions for any
+  kernel-derived quantities, in the style of §5 of the Numerical GP paper. If the
+  covariance is realized by a computation that differs from the written
+  construction, state
+  how the two correspond and to what order they agree.
 - **Notes (optional)** — brief bullets on what worked, what failed, next-trial ideas
 
 ## Physics

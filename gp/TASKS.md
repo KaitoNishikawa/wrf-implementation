@@ -44,6 +44,10 @@ The hard rules these steps enforce live in CLAUDE.md (**Numerical GP requirement
 
 - [ ] Governing Physics (numbered equations, constants table)
 - [ ] Method (prior placement, Euler embedding, block matrix / kernel structure, inference, algorithm)
+- [ ] **Operator(s) written out explicitly** — all coefficients shown, not just named; any nonlinear-operator approximation is your own choice, stated and justified — no abstract `J K J^\top` only
+- [ ] **Resulting covariance / kernel objects written explicitly** for your construction
+- [ ] **Appendix: full term-by-term expansion of those objects + closed-form expressions for any kernel-derived quantities** (§5-appendix style of the Numerical GP paper; verify the closed forms)
+- [ ] If covariance is realized by a computation differing from the written construction, the correspondence and order of agreement is stated
 - [ ] Assumptions and approximations (flagged explicitly)
 - [ ] Experimental setup
 - [ ] Results (metrics table, `\includegraphics` for figures)

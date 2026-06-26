@@ -28,3 +28,16 @@
 - Use `\begin{equation}` for numbered equations and `\begin{bmatrix}` for block matrices.
 - Define all symbols; cite sources; flag assumptions in a dedicated section.
 - Keep Method, Assumptions, and Results as separate sections.
+- **Explicit construction (mandatory; a write-up standard, not a prescribed
+  method).** Do not stop at an abstract operator-on-covariance statement
+  (`K_n = J K J^\top`). Whatever encoding you choose, show how your embedded physics
+  produces the covariance term by term, in the §5-appendix style of the Numerical
+  GP paper: write your operator(s) out with all coefficients shown (if you
+  approximate a nonlinear operator, state and justify the approximation you chose —
+  your call), the discrete stepping operator(s), the resulting covariance / kernel
+  objects, and a dedicated **Appendix** with their full term-by-term expansion plus
+  closed-form expressions for any kernel-derived quantities (verify these). If the
+  covariance is computed by a realization that differs from the written
+  construction, state the
+  correspondence and order of agreement. The encoding is each trial's own choice;
+  only the explicitness is mandated.

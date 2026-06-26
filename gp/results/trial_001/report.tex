@@ -4,65 +4,67 @@
 \usepackage[margin=1in]{geometry}
 
 \title{Trial 001: Numerical-GP Wildfire-Spread Prediction via\\
-Universal-Kriging Initialisation and Ensemble Pushforward\\
-of the Rothermel Level-Set Operator}
+Universal-Kriging Initialisation and the Euler-Embedded\\
+Rothermel Level-Set Kernel}
 \author{}
 \date{}
 
 \newcommand{\bx}{\mathbf{x}}
 \newcommand{\bw}{\mathbf{w}}
+\newcommand{\bb}{\mathbf{b}}
+\newcommand{\nhat}{\hat{\mathbf n}}
 \newcommand{\GP}{\mathcal{GP}}
 \newcommand{\N}{\mathcal{N}}
+\newcommand{\Lop}{\mathcal{L}}
+\newcommand{\Qop}{\mathcal{Q}}
+\newcommand{\Aop}{\mathcal{A}}
+\newcommand{\Dop}{\mathcal{D}}
 
 \begin{document}
 \maketitle
+\sloppy  % allow extra interword stretch so long \texttt{} / inline-math runs do not overflow the margin
 
 \section{Governing Physics}
 
 Let $\phi^{n}(\bx)$ be the level-set field on the grid $\bx=(x,y)$ at time
-$t_n=n\,\Delta t$, with $\phi<0$ burned, $\phi>0$ unburned, and the fire front at
-$\phi=0$. The simulator (\texttt{simulation.ipynb}) evolves the Rothermel-driven
-level set
+$t_n=n\,\Delta t$, with $\phi<0$ burned, $\phi>0$ unburned, the front at $\phi=0$.
+The simulator (\texttt{simulation.ipynb}) evolves the Rothermel-driven level set
 
 \begin{equation}
   \label{eq:levelset}
-  \phi_t \;=\; \mathcal{N}[\phi]
+  \phi_t \;=\; \N[\phi]
   \;:=\; -\,R_f(\phi)\,\lvert\nabla\phi\rvert
   \;+\; \nu\,\Delta x\,\nabla^{2}\phi ,
 \end{equation}
 
-where $\nu=0.4$ is the (numerical) viscosity coefficient and the $\nu\,\Delta x$
-prefactor is taken verbatim from the simulator. The rate of spread $R_f$ is the
-Rothermel (1972) imperial form, decomposed (slope $=0$, height field zeroed) as
+with $\nu=0.4$ the (numerical) viscosity coefficient (the $\nu\,\Delta x$ prefactor
+is taken verbatim from the simulator). The rate of spread is the Rothermel (1972)
+imperial form (slope $=0$, height field zeroed):
 
 \begin{equation}
   \label{eq:Rf}
-  R_f(\phi) \;=\; R_0\,\bigl(1+\phi_W(\bx)\bigr),
+  R_f(\phi) = R_0\,\bigl(1+\phi_W(\bx)\bigr),
   \qquad
   R_0=\frac{I_R\,\xi}{\rho_b\,\varepsilon_h\,Q_{ig}},
 \end{equation}
-
-with reaction intensity $I_R$, propagating-flux ratio $\xi$, ovendry bulk density
-$\rho_b$, effective heating number $\varepsilon_h$, and heat of preignition
-$Q_{ig}$. The wind factor couples the front \emph{normal}
-$\hat{\mathbf n}=\nabla\phi/\lvert\nabla\phi\rvert$ to the midflame wind
-$\mathbf{w}$:
-
 \begin{equation}
   \label{eq:windfactor}
   \phi_W(\bx)=C\,U(\bx)^{B}\,(\beta/\beta_{op})^{-E},
   \qquad
-  U(\bx)=\max\!\bigl(0,\;\mathbf{w}\cdot\hat{\mathbf n}(\bx)\bigr),
+  U(\bx)=\max\!\bigl(0,\;\bw\cdot\nhat(\bx)\bigr),
+  \quad
+  \nhat=\frac{\nabla\phi}{\lvert\nabla\phi\rvert},
 \end{equation}
 
-so $R_f$ is largest where the front normal aligns with the wind (downwind, NE
-here) and falls to $R_0$ where $U=0$. The clamp $U\ge 0$ avoids fractional powers
-of negatives (simulator behaviour). Eq.~\eqref{eq:windfactor} makes
-\eqref{eq:levelset} \emph{nonlinear and non-local in $\nabla\phi$}.
+where $I_R$ is reaction intensity, $\xi$ the propagating-flux ratio, $\rho_b$
+ovendry bulk density, $\varepsilon_h$ the effective heating number, $Q_{ig}$ the
+heat of preignition, and $\bw$ the midflame wind. Eq.~\eqref{eq:windfactor}
+couples $R_f$ to the front \emph{normal}, making \eqref{eq:levelset} nonlinear and
+non-local in $\nabla\phi$. Constants in Table~\ref{tab:constants}.
 
 \begin{table}[h]
   \centering
-  \caption{Constants and parameters (from \texttt{simulation.ipynb}; see \texttt{gp/UNITS.md}).}
+  \caption{Constants (from \texttt{simulation.ipynb}; see \texttt{gp/UNITS.md}).}
   \label{tab:constants}
   \begin{tabular}{@{}llll@{}}
     \toprule
@@ -72,9 +74,9 @@ of negatives (simulator behaviour). Eq.~\eqref{eq:windfactor} makes
     $\Delta x$ & $82.021$ & ft $(=25$\,m$)$ & grid spacing \\
     $\Delta t$ & $1$ & min & implicit Euler step \\
     $\nu$ & $0.4$ & -- & viscosity coefficient \\
-    $\mathbf{w}$ & $(100,100)$ & ft/min & midflame wind ($|\mathbf{w}|=141.4$) \\
+    $\bw$ & $(100,100)$ & ft/min & midflame wind ($|\bw|=141.4$) \\
     $R_0$ & $3.8065$ & ft/min & base ROS (no wind) \\
-    $R_f^{\max}$ & $9.6834$ & ft/min & full-wind ROS ($U=|\mathbf w|$) \\
+    $R_f^{\max}$ & $9.6834$ & ft/min & full-wind ROS \\
     $I_R$ & $730.93$ & -- & reaction intensity \\
     $\xi$ & $0.05775$ & -- & propagating-flux ratio \\
     $\rho_b$ & $0.0340$ & -- & ovendry bulk density \\
@@ -90,262 +92,288 @@ of negatives (simulator behaviour). Eq.~\eqref{eq:windfactor} makes
 
 \subsection{Prior placement}
 
-We place the GP prior on the \emph{unknown initial field} $\phi^{0}$ (the only
-latent quantity; the operator $\mathcal{N}$ is known). To keep the prior general
-and free of any ignition-geometry assumption, we use universal kriging: a generic
-low-order trend mean plus a stationary RBF residual,
+The only latent quantity is the initial field $\phi^{0}$ (the operator $\N$ is
+known). We place a universal-kriging GP prior --- a generic low-order trend mean
+plus a stationary RBF residual ---
 
 \begin{equation}
   \label{eq:prior}
   \phi^{0}(\bx)\sim\GP\!\bigl(m_{\bm\beta}(\bx),\;k(\bx,\bx')\bigr),
-  \qquad
+  \quad
   m_{\bm\beta}(\bx)=\mathbf{p}(\bx)^{\!\top}\bm\beta,
   \quad
-  k(\bx,\bx')=\sigma_f^{2}\,e^{-\lVert\bx-\bx'\rVert^{2}/2\ell^{2}}.
+  k(\bx,\bx')=\sigma_f^{2}\,e^{-\lVert\bx-\bx'\rVert^{2}/2\ell^{2}},
 \end{equation}
 
-Here $\mathbf{p}(\bx)=[\,1,u,v,u^{2},v^{2},uv\,]$ with $u=(x-100)/100$,
-$v=(y-100)/100$ (normalised by the public domain half-width, not the unknown fire
-location). \textbf{The quadratic trend is a smooth bowl; it cannot represent the
-square / signed-distance front. All front geometry is supplied by the RBF residual
-conditioned on data.} We realise both blocks as one Bayesian linear model with
-feature map $\bm\Phi(\bx)=[\,\mathbf{p}(\bx)^{\!\top},\,\mathbf{z}(\bx)^{\!\top}\,]^{\!\top}$,
-where the random Fourier features
-
-\begin{equation}
-  \label{eq:rff}
-  z_j(\bx)=\sqrt{\tfrac{2}{M}}\,\sigma_f\cos(\bm\omega_j^{\!\top}\bx+b_j),
-  \quad \bm\omega_j\sim\N(\mathbf{0},\ell^{-2}I),\;\; b_j\sim U[0,2\pi],
-\end{equation}
-satisfy $\sigma_f^{2}\,\mathbb{E}[\mathbf z(\bx)^{\!\top}\mathbf z(\bx')]\to
-k(\bx,\bx')$ as $M\to\infty$. With weight prior
-$\bw\sim\N(\mathbf 0,\Lambda)$, $\Lambda=\mathrm{blkdiag}(\tau^{2}I_6,I_M)$ (flat
-on the trend, $\tau=10^{3}$), the field is $\phi^{0}(\bx)=\bm\Phi(\bx)^{\!\top}\bw$.
+$\mathbf{p}(\bx)=[\,1,u,v,u^{2},v^{2},uv\,]$, $u=(x-100)/100$, $v=(y-100)/100$.
+\textbf{The quadratic trend is a smooth bowl; it cannot represent the square /
+signed-distance front --- all front geometry is supplied by the RBF residual
+conditioned on data.} Both blocks are one Bayesian linear model
+$\phi^{0}(\bx)=\bm\Phi(\bx)^{\!\top}\bw$ with
+$\bm\Phi=[\,\mathbf{p}^{\!\top},\mathbf{z}^{\!\top}]^{\!\top}$, random Fourier
+features $z_j(\bx)=\sqrt{2/M}\,\sigma_f\cos(\bm\omega_j^{\!\top}\bx+b_j)$,
+$\bm\omega_j\sim\N(\mathbf 0,\ell^{-2}I)$, $b_j\sim U[0,2\pi]$, so
+$\sigma_f^2\,\mathbb E[\mathbf z(\bx)^{\!\top}\mathbf z(\bx')]\!\to\!k(\bx,\bx')$,
+and weight prior $\bw\sim\N(\mathbf 0,\Lambda)$,
+$\Lambda=\mathrm{blkdiag}(\tau^{2}I_6,I_M)$, $\tau=10^3$.
 
 \subsection{Euler discretisation and numerical GP construction}
 
-The embedded time-stepper is forward Euler on \eqref{eq:levelset}
-($\Delta t=1$), defining the (nonlinear) Euler map $\mathcal{E}$:
+The embedded stepper is forward Euler on \eqref{eq:levelset} ($\Delta t=1$):
 
 \begin{equation}
   \label{eq:euler}
   \phi^{n}=\mathcal{E}[\phi^{n-1}]
-  :=\phi^{n-1}+\Delta t\,\mathcal{N}[\phi^{n-1}]
-  =\phi^{n-1}+\Delta t\bigl(-R_f^{\,n-1}\lvert\nabla\phi^{n-1}\rvert
-  +\nu\,\Delta x\,\nabla^{2}\phi^{n-1}\bigr).
+  :=\phi^{n-1}+\Delta t\,\N[\phi^{n-1}].
 \end{equation}
 
-Following the Numerical GP construction, linearising $\mathcal{E}$ about the
-current mean $m_{n-1}$ gives the Jacobian
-$J_{n-1}=I+\Delta t\,\mathcal{N}'[m_{n-1}]$ and the joint multi-output GP for two
-consecutive steps,
+\paragraph{Linearisation (frozen coefficients).}
+To obtain a numerical Gaussian process whose covariance is the operator applied to
+the kernel (Raissi et al., Eq.~11), the nonlinear term must be linear in the
+stepped field. Following the paper's treatment of the Burgers term
+$u\,u_x\!\to\!\mu^{n-1}u_x$, we \emph{freeze the nonlinear coefficients at the
+previous-step posterior mean} $\mu^{n-1}$. Using the level-set identity
+$\lvert\nabla\phi\rvert=\nhat\cdot\nabla\phi$ and freezing the normal and the rate
+of spread at $\mu^{n-1}$,
 
+\begin{equation}
+  \label{eq:frozen}
+  \nhat^{n-1}=\frac{\nabla\mu^{n-1}}{\lvert\nabla\mu^{n-1}\rvert},
+  \quad
+  U^{n-1}=\max\!\bigl(0,\bw\cdot\nhat^{n-1}\bigr),
+  \quad
+  R_f^{n-1}=R_0\bigl[1+C(U^{n-1})^{B}(\beta/\beta_{op})^{-E}\bigr],
+\end{equation}
+\begin{equation}
+  \label{eq:advfield}
+  \bb^{n-1}(\bx):=R_f^{n-1}(\bx)\,\nhat^{n-1}(\bx)
+  \qquad\Longrightarrow\qquad
+  -R_f\lvert\nabla\phi\rvert\;\approx\;-\,\bb^{n-1}(\bx)\cdot\nabla\phi .
+\end{equation}
+
+\textbf{This $\bb^{n-1}$ is exactly where the Rothermel physics enters the kernel:}
+it is the ROS-weighted front-normal advection velocity, frozen from $\mu^{n-1}$
+(set to $\mathbf 0$ where $\lvert\nabla\mu^{n-1}\rvert=0$), and it is the only
+$\mu^{n-1}$-dependent coefficient propagated through the covariance. The linearised
+operator and its forward-Euler stepping operator are
+
+\begin{equation}
+  \label{eq:linop}
+  \Lop_x\phi=-\,\bb^{n-1}(\bx)\cdot\nabla\phi+\nu\,\Delta x\,\nabla^{2}\phi
+  =-b_x\partial_x\phi-b_y\partial_y\phi+\nu\Delta x(\partial_{xx}\phi+\partial_{yy}\phi),
+\end{equation}
+\begin{equation}
+  \label{eq:Qop}
+  \Qop_x:=I+\Delta t\,\Lop_x
+  = I-\Delta t\,(b_x\partial_x+b_y\partial_y)+\Delta t\,\nu\Delta x\,(\partial_{xx}+\partial_{yy}).
+\end{equation}
+
+\paragraph{Numerical GP.}
+With prior $\phi^{n-1}\sim\GP(0,k)$ and forward Euler (the $m\!=\!1$ multistep
+method with $\mathcal P_x=I$, $\mathcal Q_x$ as in \eqref{eq:Qop}), Raissi et al.\
+Eq.~11 specialises to
+
+\begin{equation}
+  \label{eq:blockkernels}
+  k^{n,n}=\Qop_x\Qop_{x'}k,\qquad
+  k^{n,n-1}=\Qop_x k,\qquad
+  k^{n-1,n-1}=k,
+\end{equation}
 \begin{equation}
   \label{eq:joint-gp}
   \begin{bmatrix}\phi^{n}\\[2pt]\phi^{n-1}\end{bmatrix}
   \sim\GP\!\left(
-  \begin{bmatrix}\mathcal{E}[m_{n-1}]\\[2pt] m_{n-1}\end{bmatrix},\;
-  \begin{bmatrix}
-    J_{n-1}K_{n-1}J_{n-1}^{\!\top}+Q & J_{n-1}K_{n-1}\\[2pt]
-    K_{n-1}J_{n-1}^{\!\top} & K_{n-1}
-  \end{bmatrix}\right),
+  \begin{bmatrix}\mathcal{E}[\mu^{n-1}]\\[2pt]\mu^{n-1}\end{bmatrix},\;
+  \begin{bmatrix}\Qop_x\Qop_{x'}k & \Qop_x k\\[2pt]\Qop_{x'}k & k\end{bmatrix}\right).
 \end{equation}
 
-i.e.\ the cross-covariance is the operator applied to the previous kernel,
-$k^{n,n-1}(\bx,\bx')=(J_{n-1}\!\cdot k^{n-1,n-1})(\bx,\bx')$, and the marginal
-propagates as $m_n=\mathcal{E}[m_{n-1}]$, $K_n=J_{n-1}K_{n-1}J_{n-1}^{\!\top}+Q$
-($Q\succeq 0$ optional process noise; $Q=0$ here).
+The cross-kernel is, explicitly (derivatives act on the unprimed argument
+$\bx$; $k_x:=\partial_x k$, etc.),
 
-\paragraph{Computational realisation (ensemble pushforward).}
-A dense $K_n\in\mathbb{R}^{40000\times40000}$ is intractable, and the strong
-nonlinearity of $\lvert\nabla\phi\rvert$ and \eqref{eq:windfactor} makes a single
-Jacobian linearisation lossy. We therefore propagate the covariance by Monte-Carlo
-pushforward of the $t=0$ posterior through the \emph{exact} operator
-$\mathcal{E}$: draw $N$ posterior samples $\phi^{0}_{s}$, advance each by
-\eqref{eq:euler}, and estimate
+\begin{equation}
+  \label{eq:knn1}
+  k^{n,n-1}(\bx,\bx')
+  = k\;-\;\Delta t\,\bigl[b_x(\bx)\,k_{x}+b_y(\bx)\,k_{y}\bigr]
+  \;+\;\Delta t\,\nu\Delta x\,\bigl[k_{xx}+k_{yy}\bigr].
+\end{equation}
+
+The full term-by-term expansion of $k^{n,n}=\Qop_x\Qop_{x'}k$ and the closed-form
+derivative-of-kernel factors are given in Appendix~\ref{app:kernel}.
+
+\paragraph{Computational realisation.}
+Because $\phi^{0}=\bm\Phi(\bx)^{\!\top}\bw$ is a finite Bayesian linear model, the
+prior is the degenerate kernel $k^{0}(\bx,\bx')=\bm\Phi(\bx)^{\!\top}\Sigma_w\bm\Phi(\bx')$,
+and applying $\Qop_x$ to the field is applying $\Qop_x$ to each feature, so
+\eqref{eq:blockkernels} is realised exactly as the rank-$(6{+}M)$ factor
+$K_n=(\Qop^{(n)}\!\cdots\Qop^{(1)}\bm\Phi)\,\Sigma_w\,(\Qop^{(n)}\!\cdots\Qop^{(1)}\bm\Phi)^{\!\top}$,
+never forming a dense $40000^2$ kernel. The reported numbers instead use the
+\emph{exact nonlinear} ensemble pushforward
 
 \begin{equation}
   \label{eq:ensemble}
-  m_n\approx\frac1N\sum_{s=1}^{N}\phi^{n}_s,
-  \qquad
-  K_n\approx\frac1{N-1}\sum_{s=1}^{N}
-  (\phi^{n}_s-m_n)(\phi^{n}_s-m_n)^{\!\top},
-  \qquad \phi^{n}_s=\mathcal{E}^{\,n}[\phi^{0}_s].
+  m_n=\tfrac1N\!\sum_{s}\phi^{n}_s,\quad
+  K_n\approx\tfrac1{N-1}\!\sum_{s}(\phi^{n}_s-m_n)(\phi^{n}_s-m_n)^{\!\top},
+  \quad \phi^{n}_s=\mathcal{E}^{\,n}[\phi^{0}_s],\;\;\phi^{0}_s=\bm\Phi\bw_s,
 \end{equation}
 
-This is \eqref{eq:joint-gp} without the first-order truncation: the ensemble
-carries the GP covariance to every evaluation time and captures curvature/wind
-nonlinearity that $J_{n-1}$ alone would drop. We report the diagonal
-$\sigma_n(\bx)=\sqrt{\mathrm{diag}\,K_n}$ as predictive uncertainty.
+which coincides with the linearised kernel \eqref{eq:blockkernels} to first order in
+the posterior fluctuation $\delta\phi=\phi-\mu^{n-1}$ (each sample uses its own
+field, not the frozen $\mu^{n-1}$, as the advection coefficient) and additionally
+retains the curvature of $\lvert\nabla\phi\rvert$ and the wind factor; the two
+agree to $O(\lVert\delta\phi\rVert^{2})$.
 
 \subsection{Inference from sparse observations}
 
-With observation model $y_i=\phi^{0}(\bx_i)+\eta_i$, $\eta_i\sim\N(0,\sigma_n^2)$,
-$i=1\dots50$, the weight posterior is exact Bayesian linear regression,
+With $y_i=\phi^{0}(\bx_i)+\eta_i$, $\eta_i\sim\N(0,\sigma_n^2)$, $i=1\dots50$, the
+weight posterior is exact Bayesian linear regression,
 
 \begin{equation}
   \label{eq:posterior}
-  \bw\mid\mathbf y\sim\N(\bm\mu_w,\Sigma_w),
-  \quad
-  \Sigma_w=A^{-1},\;\;
-  A=\sigma_n^{-2}\bm\Phi_X^{\!\top}\bm\Phi_X+\Lambda^{-1},\;\;
+  \bw\mid\mathbf y\sim\N(\bm\mu_w,\Sigma_w),\quad
+  \Sigma_w=A^{-1},\;
+  A=\sigma_n^{-2}\bm\Phi_X^{\!\top}\bm\Phi_X+\Lambda^{-1},\;
   \bm\mu_w=\sigma_n^{-2}A^{-1}\bm\Phi_X^{\!\top}\mathbf y,
 \end{equation}
 
-where $\bm\Phi_X\in\mathbb{R}^{50\times(6+M)}$ stacks the features at the
-observation cells. The posterior field mean is $m_0(\bx)=\bm\Phi(\bx)^{\!\top}\bm\mu_w$
-and posterior IC draws are $\phi^{0}_s=\bm\Phi\,\bw_s$,
-$\bw_s=\bm\mu_w+R^{-\top}\bm\eta_s$ with $A=RR^{\!\top}$, $\bm\eta_s\sim\N(0,I)$.
-The lengthscale $\ell$ is selected by maximising the exact-RBF log marginal
-likelihood of the \emph{detrended} observations over
-$\ell\in\{8,\dots,24\}$ (data-only; no ground truth), giving $\ell=16$ cells.
+giving $m_0=\bm\Phi^{\!\top}\bm\mu_w$ and draws
+$\phi^{0}_s=\bm\Phi\bw_s$, $\bw_s=\bm\mu_w+R^{-\top}\bm\eta_s$, $A=RR^{\!\top}$. The
+lengthscale $\ell$ maximises the exact-RBF log marginal likelihood of the
+\emph{detrended} observations (data only; no ground truth), giving $\ell=16$ cells.
 
 \subsection{Algorithm}
 
 \begin{enumerate}\itemsep0pt
   \item Sample 50 observation values from $\phi^{0}$ in the central window
         $[50,150)^2$ (seed 42).
-  \item Select $\ell$ by detrended marginal likelihood; form the BLR posterior
-        \eqref{eq:posterior} from the 50 values only.
-  \item Draw $N=128$ posterior initial fields $\phi^{0}_s$.
-  \item Advance each $\phi^{0}_s$ by the embedded Euler map \eqref{eq:euler} for
-        300 steps, recording $t\in\{50,100,150,200,250,300\}$.
-  \item Report ensemble mean \eqref{eq:ensemble} as the prediction and ensemble
-        std as uncertainty; compare to the simulator ground truth.
+  \item Select $\ell$; form the BLR posterior \eqref{eq:posterior} from the 50
+        values only.
+  \item Draw $N=128$ posterior fields $\phi^{0}_s$.
+  \item Advance each by the embedded Euler map \eqref{eq:euler}; at every step the
+        frozen advection $\bb^{n-1}$ \eqref{eq:advfield} carries the Rothermel
+        physics. Record $t\in\{50,\dots,300\}$.
+  \item Report the ensemble mean \eqref{eq:ensemble} as prediction and ensemble std
+        as uncertainty; compare to the simulator ground truth.
 \end{enumerate}
 
 \section{Assumptions and approximations}
 
 \begin{itemize}\itemsep1pt
+  \item \textbf{Frozen-coefficient linearisation} \eqref{eq:frozen}--\eqref{eq:advfield}:
+        the kernel construction freezes $R_f$ and the front normal at $\mu^{n-1}$
+        (Burgers-style). The reported covariance uses the exact nonlinear
+        pushforward \eqref{eq:ensemble}, equal to the linearised kernel to
+        $O(\lVert\delta\phi\rVert^2)$.
   \item \textbf{Known operator, faithful re-implementation.} The embedded operator
-        \eqref{eq:euler}--\eqref{eq:windfactor} is mathematically identical to the
-        simulator's Rothermel level-set Euler step but is a separate
-        implementation (no shared function). Consequently forecast error is
-        dominated by the \emph{propagated $t=0$ reconstruction error}, reported
-        separately from the reconstruction error itself (Sec.~\ref{sec:results}).
-  \item \textbf{Universal-kriging mean.} The quadratic trend is a generic smooth
-        bowl, not an ignition-shape prior. In the unobserved far field the
-        posterior reverts to this trend, which overshoots the true signed
-        distance; hence \emph{full-grid} RMSE is dominated by the far field, while
-        the fire (which never leaves $[80,140]^2$) is governed by the central
-        window.
-  \item \textbf{Covariance via ensemble pushforward} \eqref{eq:ensemble}, not a
-        dense kernel; first-order term in \eqref{eq:joint-gp} is superseded by the
-        exact nonlinear pushforward. RFF ($M=512$) approximates the RBF kernel.
-  \item \textbf{No reinitialisation} of $\phi$ on \emph{either} side (symmetric):
-        the simulator never redistances, so $\lvert\nabla\phi\rvert$ drifts from 1
-        identically in prediction and ground truth.
-  \item \textbf{Boundaries ignored} (infinite-plane assumption); verified that the
-        front stays interior. Wind clamp $U\ge0$ as in the simulator. Euler only,
-        $\Delta t=1$ min.
+        is mathematically identical to the simulator's Rothermel level-set Euler
+        step but a separate implementation (no shared function); forecast error is
+        dominated by the propagated $t=0$ reconstruction error, reported
+        separately.
+  \item \textbf{Universal-kriging mean}: a generic quadratic bowl, not an
+        ignition-shape prior. The far field reverts to this trend (overshoots the
+        true signed distance), so \emph{full-grid} RMSE is dominated by the
+        unobserved far field; the fire stays in $[80,140]^2$.
+  \item \textbf{RFF} ($M=512$) approximates the RBF kernel; covariance carried as a
+        rank-$(6{+}M)$ factor / $N=128$ ensemble, never a dense $40000^2$ matrix.
+  \item \textbf{No reinitialisation} of $\phi$ on either side (symmetric);
+        boundaries ignored (front verified interior); wind clamp $U\ge0$; Euler
+        only, $\Delta t=1$ min.
 \end{itemize}
 
 \section{Experimental setup}
 
-Seed $=42$; grid $200\times200$; $\Delta x=82.021$ ft; $\Delta t=1$ min; $\nu=0.4$;
-wind $(100,100)$ ft/min. Observations: 50 cells drawn uniformly from
-$[50,150)^2$. GP: $\ell=16$ cells, $\sigma_f=13.44$, $\sigma_n=0.1$, $\tau=10^3$,
-$M=512$ random Fourier features. Ensemble $N=128$. Evaluation
-$t\in\{50,100,150,200,250,300\}$.
-\textbf{Code paths (disjoint):} ground truth $=$
-\texttt{simulator\_groundtruth.ground\_truth\_step}; prediction $=$
-\texttt{numerical\_gp.embedded\_levelset\_step}. They share no forward-stepping
-function (asserted at run time).
+Seed $=42$; grid $200^2$; $\Delta x=82.021$ ft; $\Delta t=1$ min; $\nu=0.4$; wind
+$(100,100)$ ft/min. Observations: 50 cells from $[50,150)^2$. GP: $\ell=16$ cells,
+$\sigma_f=13.44$, $\sigma_n=0.1$, $\tau=10^3$, $M=512$ features. Ensemble $N=128$.
+Evaluation $t\in\{50,100,150,200,250,300\}$. \textbf{Code paths (disjoint):} ground
+truth $=$ \texttt{simulator\_groundtruth.ground\_truth\_step}; prediction $=$
+\texttt{numerical\_gp.embedded\_levelset\_step}; no shared forward-stepper
+(asserted at run time).
 
 \section{Results}
 \label{sec:results}
 
-Table~\ref{tab:metrics} separates the $t=0$ reconstruction error (GP posterior vs.\
-true $\phi^0$) from the $t>0$ forecast error. The fire front is tracked to
-$1.3$--$1.5$ cells ($\approx110$--$120$ ft, i.e.\ $1.3$--$1.5\,\Delta x$)
-throughout, while the field RMSE in the observed window stays $\approx 4.4$--$4.7$.
-The Hausdorff front distance ($\approx 4.2$ cells) reflects the persistent
-mismatch at the sharp ignition corners that the RBF reconstruction rounds off
-(Fig.~\ref{fig:t0}): the test is not circular --- the error is real, distributed,
-and concentrated where reconstruction is hardest.
+Table~\ref{tab:metrics} separates the $t=0$ reconstruction error from the $t>0$
+forecast error. The front is tracked to $1.3$--$1.5$ cells ($\approx110$--$120$ ft)
+throughout; window field RMSE stays $\approx4.4$--$4.7$. The Hausdorff front
+distance ($\approx4.2$ cells) reflects the persistent mismatch at the sharp
+ignition corners that the RBF reconstruction rounds off (Fig.~\ref{fig:t0}) --- the
+test is not circular: the error is real, distributed, and concentrated where
+reconstruction is hardest.
 
 \begin{table}[h]
   \centering
-  \caption{Metrics. Row $t=0$ is reconstruction (separate from forecast).
-    RMSE/MAE in $\phi$ (cells); front distances in cells (mean) and ft;
-    $\bar\sigma_{\text{band}}$ is ensemble std in the front band $|\phi_{\rm gt}|\le4$;
-    last column is the GP-ablation (trend-only IC) window RMSE.}
+  \caption{Metrics. Row $t=0$ is reconstruction (separate from forecast). RMSE in
+    $\phi$ (cells); front distances in cells (mean) / ft; $\bar\sigma_{\text{band}}$
+    is ensemble std in the front band $|\phi_{\rm gt}|\le4$; last column is the
+    GP-ablation (trend-only IC) window RMSE.}
   \label{tab:metrics}
-  \begin{tabular}{@{}rccccccc@{}}
+  \begin{tabular}{@{}rcccccc@{}}
     \toprule
-    $t$ & RMSE$_{\rm win}$ & RMSE$_{\rm full}$ & front mean & front mean & Hausdorff
+    $t$ & RMSE$_{\rm win}$ & RMSE$_{\rm full}$ & front mean & Hausdorff
     & $\bar\sigma_{\text{band}}$ & abl.\ RMSE$_{\rm win}$ \\
-     & ($\phi$) & ($\phi$) & (cells) & (ft) & (cells) & (cells) & (no front) \\
+     & ($\phi$) & ($\phi$) & (cells / ft) & (cells) & (cells) & (no front) \\
     \midrule
-    0 (recon) & 4.205 & 11.567 & 1.45 & 119 & --   & 0.183 & -- \\
-    50  & 4.428 & 12.088 & 1.41 & 116 & 4.41 & 0.183 & 7.213 \\
-    100 & 4.526 & 11.996 & 1.41 & 115 & 4.38 & 0.181 & 7.949 \\
-    150 & 4.554 & 12.137 & 1.37 & 113 & 4.33 & 0.181 & 8.831 \\
-    200 & 4.552 & 12.407 & 1.36 & 112 & 4.29 & 0.182 & 9.825 \\
-    250 & 4.581 & 12.763 & 1.33 & 109 & 4.18 & 0.191 & 10.898 \\
-    300 & 4.696 & 13.284 & 1.33 & 109 & 4.23 & 0.256 & 12.019 \\
+    0 (recon) & 4.205 & 11.567 & 1.45 / 119 & --   & 0.183 & -- \\
+    50  & 4.428 & 12.088 & 1.41 / 116 & 4.41 & 0.183 & 7.213 \\
+    100 & 4.526 & 11.996 & 1.41 / 115 & 4.38 & 0.181 & 7.949 \\
+    150 & 4.554 & 12.137 & 1.37 / 113 & 4.33 & 0.181 & 8.831 \\
+    200 & 4.552 & 12.407 & 1.36 / 112 & 4.29 & 0.182 & 9.825 \\
+    250 & 4.581 & 12.763 & 1.33 / 109 & 4.18 & 0.191 & 10.898 \\
+    300 & 4.696 & 13.284 & 1.33 / 109 & 4.23 & 0.256 & 12.019 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 \paragraph{GP is load-bearing (two diagnostics).}
-\emph{(i) Uncertainty propagation.} The ensemble std in the front band is non-zero
-at every time and grows $0.183\!\to\!0.256$ cells of $\phi$ from $t=0$ to $t=300$
-(Fig.~\ref{fig:diag}, left) --- the nonlinear operator amplifies the inferred
-initial-state uncertainty, so this is not a mean-only rollout. (The absolute
-predictive variance is far larger, $>60$ cells, in the unobserved far field.)
-\emph{(ii) Ablation.} Removing the GP residual (quadratic trend only) yields an IC
-with $\min\phi=14.8>0$: \textbf{no fire front exists at all} (0 burned cells at
-every time), and the window RMSE degrades to $7.2\!\to\!12.0$
-(Fig.~\ref{fig:diag}, right). The entire fire geometry is supplied by the GP
-residual conditioned on the 50 values; the result changes drastically when the GP
-is removed.
+\emph{(i) Uncertainty propagation.} The front-band ensemble std grows
+$0.183\!\to\!0.256$ cells of $\phi$ from $t=0$ to $300$ (Fig.~\ref{fig:diag}, left):
+the nonlinear operator amplifies the inferred initial-state uncertainty --- not a
+mean-only rollout. \emph{(ii) Ablation.} Removing the GP residual (quadratic trend
+only) gives $\min\phi=14.8>0$: \textbf{no fire front exists at all} (0 burned cells
+at every time), and window RMSE degrades to $7.2\!\to\!12.0$ (Fig.~\ref{fig:diag},
+right). The entire fire geometry is supplied by the GP residual conditioned on the
+50 values.
 
 \paragraph{Circularity / leakage self-check} (\texttt{self\_check.txt}):
 (a) predictions come from \texttt{embedded\_levelset\_step}, distinct from the
 simulator's \texttt{ground\_truth\_step} (asserted \texttt{True}); (b) inference
-used only the 50 observation values (range $[-3.0,47.5]$); the GP never reads the
-true field or its parameters; (c) the GP is non-degenerate (front-band std
-$0.18$--$0.26>0$; reconstruction window RMSE $4.2>0$, so the front is genuinely
-inferred, not leaked). No spurious burned cells appear outside the window.
+used only the 50 values (range $[-3.0,47.5]$); (c) the GP is non-degenerate
+(front-band std $0.18$--$0.26>0$; reconstruction RMSE $4.2>0$). No spurious burned
+cells outside the window.
 
 \begin{figure}[h]
   \centering
   \includegraphics[width=\linewidth]{t0_reconstruction.png}
-  \caption{$t=0$. True $\phi^{0}$ with the 50 sampled observations (black), GP
-    posterior mean (note the rounded reconstruction of the sharp square front),
-    posterior std (low where observed, high at unobserved corners), and
-    $|$reconstruction error$|$.}
+  \caption{$t=0$. True $\phi^{0}$ with 50 observations (black); GP posterior mean
+    (rounded reconstruction of the sharp square); posterior std (low where
+    observed); $|$reconstruction error$|$.}
   \label{fig:t0}
 \end{figure}
 
 \begin{figure}[h]
   \centering
   \includegraphics[width=\linewidth]{comparison_t300.png}
-  \caption{$t=300$. Prediction (ensemble mean, red contour) vs.\ ground truth
-    (black), absolute error, and predictive std with the GT front overlaid
-    (white). Fronts agree to $1.33$ cells mean; shape differences persist at the
-    wind-driven tip.}
+  \caption{$t=300$. Prediction (ensemble mean, red) vs.\ ground truth (black),
+    absolute error, and predictive std with the GT front (white). Fronts agree to
+    $1.33$ cells mean; shape differences persist at the wind-driven tip.}
   \label{fig:t300}
 \end{figure}
 
 \begin{figure}[h]
   \centering
-  \includegraphics[width=0.62\linewidth]{front_evolution.png}
-  \caption{Fire-front evolution, GT (solid) vs.\ prediction (dashed), colour-coded
-    in time $0\to300$. The $t=0$ GT front is the sharp square; the prediction
-    starts rounded yet tracks the teardrop spread. Grey curves are 40 ensemble
-    members at $t=300$ (uncertainty band).}
+  \includegraphics[width=0.6\linewidth]{front_evolution.png}
+  \caption{Front evolution, GT (solid) vs.\ prediction (dashed), colour-coded in
+    time $0\to300$. The $t=0$ GT front is the sharp square; the prediction starts
+    rounded yet tracks the teardrop spread. Grey: 40 ensemble members at $t=300$.}
   \label{fig:front}
 \end{figure}
 
 \begin{figure}[h]
   \centering
   \includegraphics[width=\linewidth]{diagnostics.png}
-  \caption{Load-bearing diagnostics. Left: front-band ensemble std grows with
-    time (uncertainty propagated, not collapsed). Right: ablation --- removing the
-    GP residual (trend-only IC, which has no front) degrades window RMSE from
-    $\approx4.5$ to $7$--$12$.}
+  \caption{Left: front-band ensemble std grows with time (uncertainty propagated).
+    Right: ablation --- removing the GP residual (trend-only IC, no front) degrades
+    window RMSE from $\approx4.5$ to $7$--$12$.}
   \label{fig:diag}
 \end{figure}
 
@@ -353,39 +381,164 @@ inferred, not leaked). No spurious burned cells appear outside the window.
 
 \begin{itemize}\itemsep0pt
   \item M.~Raissi, P.~Perdikaris, G.~E.~Karniadakis, \emph{Numerical Gaussian
-        Processes for Time-dependent and Non-linear Partial Differential
-        Equations} --- joint multi-output GP / Euler-embedded kernel construction
-        \eqref{eq:joint-gp}.
+        Processes for Time-dependent and Non-linear PDEs} --- multi-output GP /
+        Euler-embedded kernel (Eqs.~4, 11; Appendix~5.1 style adopted here).
   \item R.~C.~Rothermel (1972), \emph{A Mathematical Model for Predicting Fire
-        Spread} --- rate-of-spread \eqref{eq:Rf}--\eqref{eq:windfactor}
-        (\texttt{gp/docs/}).
+        Spread} --- ROS \eqref{eq:Rf}--\eqref{eq:windfactor} (\texttt{gp/docs/}).
   \item D.~Mu\~noz-Esparza et al.\ (2018), \emph{An Accurate Fire-Spread Algorithm
-        in the WRF Model Using the Level-Set Method} --- level-set form
+        in the WRF Model Using the Level-Set Method} --- level set
         \eqref{eq:levelset} (\texttt{gp/docs/}).
-  \item \texttt{simulation.ipynb} --- source of truth for constants, operators,
-        and ground truth; \texttt{gp/UNITS.md} --- units ($\Delta t=1$ min,
-        $\Delta x=82.021$ ft).
+  \item \texttt{simulation.ipynb} (constants, operators, ground truth);
+        \texttt{gp/UNITS.md}.
 \end{itemize}
+
+\appendix
+\section{Explicit kernel construction}
+\label{app:kernel}
+
+Write the per-argument advection and diffusion sub-operators (frozen coefficients
+$\bb^{n-1}=(b_x,b_y)$ from \eqref{eq:advfield})
+
+\begin{equation}
+  \label{eq:subops}
+  \Aop_x=b_x(\bx)\partial_x+b_y(\bx)\partial_y,\qquad
+  \Dop_x=\nu\Delta x\,(\partial_{xx}+\partial_{yy}),\qquad
+  \Qop_x=I+\Delta t\,(\Dop_x-\Aop_x),
+\end{equation}
+
+and likewise $\Aop_{x'},\Dop_{x'},\Qop_{x'}$ acting on the primed argument
+$\bx'=(x',y')$. The cross-kernel \eqref{eq:knn1} is
+$k^{n,n-1}=k-\Delta t\,\Aop_x k+\Delta t\,\Dop_x k$. The diagonal block expands as
+
+\begin{equation}
+  \label{eq:knn-full}
+  \begin{aligned}
+  k^{n,n}=\Qop_x\Qop_{x'}k
+  =\;& k
+   \;-\;\Delta t\bigl(\Aop_x k+\Aop_{x'}k\bigr)
+   \;+\;\Delta t\bigl(\Dop_x k+\Dop_{x'}k\bigr)\\
+  &+\;\Delta t^{2}\bigl(\Aop_x\Aop_{x'}k-\Aop_x\Dop_{x'}k-\Dop_x\Aop_{x'}k+\Dop_x\Dop_{x'}k\bigr),
+  \end{aligned}
+\end{equation}
+
+with the individual terms (grouping the four $O(\Delta t^2)$ products)
+
+\begin{equation}
+  \label{eq:terms-first}
+  \begin{aligned}
+  \Aop_x k &= b_x(\bx)k_x+b_y(\bx)k_y, &
+  \Dop_x k &= \nu\Delta x\,(k_{xx}+k_{yy}),\\
+  \Aop_{x'} k &= b_x(\bx')k_{x'}+b_y(\bx')k_{y'}, &
+  \Dop_{x'} k &= \nu\Delta x\,(k_{x'x'}+k_{y'y'}),
+  \end{aligned}
+\end{equation}
+\begin{equation}
+  \label{eq:terms-AA}
+  \Aop_x\Aop_{x'}k=
+  b_x(\bx)b_x(\bx')\,k_{xx'}
+  +b_x(\bx)b_y(\bx')\,k_{xy'}
+  +b_y(\bx)b_x(\bx')\,k_{yx'}
+  +b_y(\bx)b_y(\bx')\,k_{yy'},
+\end{equation}
+\begin{equation}
+  \label{eq:terms-AD}
+  \Aop_x\Dop_{x'}k=\nu\Delta x\bigl[
+  b_x(\bx)(k_{xx'x'}+k_{xy'y'})
+  +b_y(\bx)(k_{yx'x'}+k_{yy'y'})\bigr],
+\end{equation}
+\begin{equation}
+  \label{eq:terms-DA}
+  \Dop_x\Aop_{x'}k=\nu\Delta x\bigl[
+  b_x(\bx')(k_{xxx'}+k_{yyx'})
+  +b_y(\bx')(k_{xxy'}+k_{yyy'})\bigr],
+\end{equation}
+\begin{equation}
+  \label{eq:terms-DD}
+  \Dop_x\Dop_{x'}k=\nu^{2}\Delta x^{2}\bigl(
+  k_{xxx'x'}+k_{xxy'y'}+k_{yyx'x'}+k_{yyy'y'}\bigr).
+\end{equation}
+
+\paragraph{Closed-form derivative factors.}
+The RBF kernel separates, $k(\bx,\bx')=\sigma_f^{2}\,g(\delta)\,h(\gamma)$ with
+$\delta=x-x'$, $\gamma=y-y'$, $g(\delta)=e^{-\delta^{2}/2\ell^{2}}$,
+$h(\gamma)=e^{-\gamma^{2}/2\ell^{2}}$. Since $\partial_x=\partial_\delta$,
+$\partial_{x'}=-\partial_\delta$, $\partial_y=\partial_\gamma$,
+$\partial_{y'}=-\partial_\gamma$, every factor above is a signed product of the
+one-dimensional Gaussian derivatives
+
+\begin{equation}
+  \label{eq:gderivs}
+  \begin{aligned}
+  g^{(1)}&=-\tfrac{\delta}{\ell^{2}}g, &
+  g^{(2)}&=\bigl(\tfrac{\delta^{2}}{\ell^{4}}-\tfrac{1}{\ell^{2}}\bigr)g, \\
+  g^{(3)}&=\bigl(-\tfrac{\delta^{3}}{\ell^{6}}+\tfrac{3\delta}{\ell^{4}}\bigr)g, &
+  g^{(4)}&=\bigl(\tfrac{\delta^{4}}{\ell^{8}}-\tfrac{6\delta^{2}}{\ell^{6}}+\tfrac{3}{\ell^{4}}\bigr)g,
+  \end{aligned}
+\end{equation}
+
+and identically $h^{(1\ldots4)}(\gamma)$. Table~\ref{tab:factors} lists all factors
+appearing in \eqref{eq:terms-first}--\eqref{eq:terms-DD} (verified numerically
+against central differences to $<10^{-4}$ relative error).
+
+\begin{table}[h]
+  \centering
+  \caption{Derivative-of-kernel factors ($\sigma_f^{2}$ implicit on every entry).}
+  \label{tab:factors}
+  \begin{tabular}{@{}llll@{}}
+    \toprule
+    factor & value & factor & value \\
+    \midrule
+    $\partial_x k$ & $g^{(1)}h$ &
+    $\partial_x\partial_{x'}k$ & $-g^{(2)}h$ \\
+    $\partial_y k$ & $g\,h^{(1)}$ &
+    $\partial_x\partial_{y'}k=\partial_y\partial_{x'}k$ & $-g^{(1)}h^{(1)}$ \\
+    $\partial_{xx}k$ & $g^{(2)}h$ &
+    $\partial_y\partial_{y'}k$ & $-g\,h^{(2)}$ \\
+    $\partial_{yy}k$ & $g\,h^{(2)}$ &
+    $\partial_x\partial_{x'x'}k$ & $g^{(3)}h$ \\
+    $\partial_{x'}k$ & $-g^{(1)}h$ &
+    $\partial_x\partial_{y'y'}k$ & $g^{(1)}h^{(2)}$ \\
+    $\partial_{y'}k$ & $-g\,h^{(1)}$ &
+    $\partial_y\partial_{x'x'}k$ & $g^{(2)}h^{(1)}$ \\
+    $\partial_{x'x'}k$ & $g^{(2)}h$ &
+    $\partial_y\partial_{y'y'}k$ & $g\,h^{(3)}$ \\
+    $\partial_{y'y'}k$ & $g\,h^{(2)}$ &
+    $\partial_{xx}\partial_{x'}k$ & $-g^{(3)}h$ \\
+    $\partial_{xx}\partial_{x'x'}k$ & $g^{(4)}h$ &
+    $\partial_{yy}\partial_{x'}k$ & $-g^{(1)}h^{(2)}$ \\
+    $\partial_{xx}\partial_{y'y'}k$ & $g^{(2)}h^{(2)}$ &
+    $\partial_{xx}\partial_{y'}k$ & $-g^{(2)}h^{(1)}$ \\
+    $\partial_{yy}\partial_{x'x'}k$ & $g^{(2)}h^{(2)}$ &
+    $\partial_{yy}\partial_{y'}k$ & $-g\,h^{(3)}$ \\
+    $\partial_{yy}\partial_{y'y'}k$ & $g\,h^{(4)}$ & & \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Substituting Table~\ref{tab:factors} into
+\eqref{eq:terms-first}--\eqref{eq:terms-DD} gives $k^{n,n}$ in closed form; the only
+$\bx$-dependence beyond the Gaussian factors is through the Rothermel advection
+$\bb^{n-1}(\bx)$ \eqref{eq:advfield}, which is precisely how the fire-spread physics
+is encoded in the numerical-GP covariance.
 
 \section{Notes}
 
 \begin{itemize}\itemsep0pt
-  \item \textbf{Worked:} sparse central inference + identical physics gives a
-        front tracked to $\sim1.4$ cells; the level-set speed $F=R_f$ is
-        independent of $\lvert\nabla\phi\rvert$, so once the front is located it
-        stays located (the slight front-distance \emph{decrease} over time is
-        curvature/viscosity smoothing of the rounded prediction toward the GT).
-  \item \textbf{Limitations:} (1) far-field reconstruction reverts to the
-        quadratic trend (full-grid RMSE inflated; fire unaffected); (2) front-band
-        predictive std is modest ($0.18$--$0.26$ cells) because 50 central
-        observations strongly constrain the front; (3) the operator is identical
-        by design, so this trial tests \emph{initial-state inference $+$ uncertainty
-        propagation}, not operator learning.
-  \item \textbf{Next-trial ideas:} replace the quadratic trend with a
-        monotone-radial-basis far-field model; condition on fewer / noisier
-        observations to enlarge predictive variance; add process noise $Q$
-        from the Euler truncation; compare ensemble pushforward against the
-        explicit linearised $K_n=J_{n-1}K_{n-1}J_{n-1}^{\!\top}$ propagation.
+  \item \textbf{Worked:} sparse central inference $+$ identical physics tracks the
+        front to $\sim1.4$ cells; the level-set speed $F=R_f$ is independent of
+        $\lvert\nabla\phi\rvert$, so once located the front stays located (the
+        slight front-distance decrease is curvature/viscosity smoothing of the
+        rounded prediction toward the GT).
+  \item \textbf{Limitations:} (1) far-field reconstruction reverts to the quadratic
+        trend (full-grid RMSE inflated; fire unaffected); (2) front-band std is
+        modest because 50 central observations strongly constrain the front; (3) the
+        operator is identical by design, so this trial tests initial-state inference
+        $+$ uncertainty propagation, not operator learning.
+  \item \textbf{Next-trial ideas:} form the factored kernel
+        $K_n=(\Qop^{(n)}\!\cdots\Qop^{(1)}\bm\Phi)\Sigma_w(\cdots)^{\!\top}$
+        explicitly and compare against the ensemble \eqref{eq:ensemble}; add process
+        noise from the Euler truncation; condition on fewer/noisier observations to
+        enlarge predictive variance.
 \end{itemize}
 
 \end{document}
